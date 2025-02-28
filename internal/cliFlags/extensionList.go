@@ -4,6 +4,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/simulot/immich-go/internal/filetypes"
 	"github.com/spf13/cobra"
 )
 
@@ -14,26 +15,11 @@ type InclusionFlags struct {
 	DateRange          DateRange
 }
 
-var fileTypeMap = map[string]ExtensionList{
-	"video": {
-		".3gp", ".avi", ".flv", ".insv", ".m2ts", ".m4v", ".mkv", ".mov",
-		".mp4", ".mpg", ".mts", ".webm", ".wmv", ".xmp", ".json",
-	},
-	"picture": {
-		".3fr", ".ari", ".arw", ".avif", ".bmp", ".cap", ".cin", ".cr2",
-		".cr3", ".crw", ".dcr", ".dng", ".erf", ".fff", ".gif", ".heic",
-		".heif", ".hif", ".iiq", ".insp", ".jpe", ".jpeg", ".jpg", ".jxl",
-		".k25", ".kdc", ".mrw", ".nef", ".orf", ".ori", ".pef", ".png",
-		".psd", ".raf", ".raw", ".rw2", ".rwl", ".sr2", ".srf", ".srw",
-		".tif", ".tiff", ".webp", ".x3f", ".xmp", ".json",
-	},
-}
-
 func AddInclusionFlags(cmd *cobra.Command, flags *InclusionFlags) {
 	cmd.Flags().Var(&flags.DateRange, "date-range", "Only import photos taken within the specified date range")
 	cmd.Flags().Var(&flags.ExcludedExtensions, "exclude-extensions", "Comma-separated list of extension to exclude. (e.g. .gif,.PM) (default: none)")
 	cmd.Flags().Var(&flags.IncludedExtensions, "include-extensions", "Comma-separated list of extension to include. (e.g. .jpg,.heic) (default: all)")
-	cmd.Flags().StringVar(&flags.IncludeType, "include-type", "", "Specify file type to include (video, picture). Overrides --include-extensions")
+	cmd.Flags().StringVar(&flags.IncludeType, "include-type", "video", "Specify file type to include (video, picture). Overrides --include-extensions")
 	cmd.PreRun = func(cmd *cobra.Command, args []string) {
 		if cmd.Flags().Changed("include-type") {
 			parseExtensions(flags)
@@ -41,14 +27,14 @@ func AddInclusionFlags(cmd *cobra.Command, flags *InclusionFlags) {
 	}
 }
 func parseExtensions(flags *InclusionFlags) {
-	if flags.IncludeType == "video" || flags.IncludeType == "picture" {
-		for _, ext := range fileTypeMap[flags.IncludeType] {
+	for ext, mediaType := range filetypes.DefaultSupportedMedia {
+		if (flags.IncludeType == "video" && (mediaType == filetypes.TypeVideo || mediaType == filetypes.TypeSidecar)) ||
+			(flags.IncludeType == "picture" && (mediaType == filetypes.TypeImage || mediaType == filetypes.TypeSidecar)) {
 			if !slices.Contains(flags.IncludedExtensions, ext) {
 				flags.IncludedExtensions = append(flags.IncludedExtensions, ext)
 			}
 		}
 	}
-
 }
 
 // Validate validates the common flags.
