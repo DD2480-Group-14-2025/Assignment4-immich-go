@@ -37,25 +37,25 @@ func AddInclusionFlags(cmd *cobra.Command, flags *InclusionFlags) {
 	cmd.Flags().StringVar(&flags.IncludeType, "include-type", "", "Specify file type to include (video, picture). Overrides --include-extensions")
 	cmd.PreRun = func(cmd *cobra.Command, args []string) {
 		if cmd.Flags().Changed("include-type") {
-			switch flags.IncludeType {
-			case "video":
+			if flags.IncludeType == "video" || flags.IncludeType == "picture" {
 				flags.IncludedExtensions = parseExtensions(flags.IncludedExtensions, flags.IncludeType)
-			case "picture":
-				flags.IncludedExtensions = parseExtensions(flags.IncludedExtensions, flags.IncludeType)
-			default:
+			} else {
 				fmt.Printf("Unknown include-type: %s\n", flags.IncludeType)
 			}
 		}
 	}
 }
 func parseExtensions(sl ExtensionList, IncludeType string) ExtensionList {
-	sl = append(sl, fileTypeMap[IncludeType]...)
+	for _, ext := range fileTypeMap[IncludeType] {
+		if !slices.Contains(sl, ext) {
+			sl = append(sl, ext)
+		}
+	}
 	return sl
 }
 
 // Validate validates the common flags.
 func (flags *InclusionFlags) Validate() {
-
 	flags.ExcludedExtensions = flags.ExcludedExtensions.Validate()
 	flags.IncludedExtensions = flags.IncludedExtensions.Validate()
 
