@@ -1,7 +1,6 @@
 package cliflags
 
 import (
-	"fmt"
 	"slices"
 	"strings"
 
@@ -37,28 +36,25 @@ func AddInclusionFlags(cmd *cobra.Command, flags *InclusionFlags) {
 	cmd.Flags().StringVar(&flags.IncludeType, "include-type", "", "Specify file type to include (video, picture). Overrides --include-extensions")
 	cmd.PreRun = func(cmd *cobra.Command, args []string) {
 		if cmd.Flags().Changed("include-type") {
-			if flags.IncludeType == "video" || flags.IncludeType == "picture" {
-				flags.IncludedExtensions = parseExtensions(flags.IncludedExtensions, flags.IncludeType)
-			} else {
-				fmt.Printf("Unknown include-type: %s\n", flags.IncludeType)
-			}
+			parseExtensions(flags)
 		}
 	}
 }
-func parseExtensions(sl ExtensionList, IncludeType string) ExtensionList {
-	for _, ext := range fileTypeMap[IncludeType] {
-		if !slices.Contains(sl, ext) {
-			sl = append(sl, ext)
+func parseExtensions(flags *InclusionFlags) {
+	if flags.IncludeType == "video" || flags.IncludeType == "picture" {
+		for _, ext := range fileTypeMap[flags.IncludeType] {
+			if !slices.Contains(flags.IncludedExtensions, ext) {
+				flags.IncludedExtensions = append(flags.IncludedExtensions, ext)
+			}
 		}
 	}
-	return sl
+
 }
 
 // Validate validates the common flags.
 func (flags *InclusionFlags) Validate() {
 	flags.ExcludedExtensions = flags.ExcludedExtensions.Validate()
 	flags.IncludedExtensions = flags.IncludedExtensions.Validate()
-
 }
 
 // An ExtensionList is a list of file extensions, where each extension is a string that starts with a dot (.) and is in lowercase.
