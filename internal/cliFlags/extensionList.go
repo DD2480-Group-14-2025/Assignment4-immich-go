@@ -1,6 +1,7 @@
 package cliflags
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 
@@ -10,19 +11,54 @@ import (
 type InclusionFlags struct {
 	ExcludedExtensions ExtensionList
 	IncludedExtensions ExtensionList
+	IncludeType        string
 	DateRange          DateRange
+}
+
+var fileTypeMap = map[string]ExtensionList{
+	"video": {
+		".3gp", ".avi", ".flv", ".insv", ".m2ts", ".m4v", ".mkv", ".mov",
+		".mp4", ".mpg", ".mts", ".webm", ".wmv", ".xmp", ".json",
+	},
+	"picture": {
+		".3fr", ".ari", ".arw", ".avif", ".bmp", ".cap", ".cin", ".cr2",
+		".cr3", ".crw", ".dcr", ".dng", ".erf", ".fff", ".gif", ".heic",
+		".heif", ".hif", ".iiq", ".insp", ".jpe", ".jpeg", ".jpg", ".jxl",
+		".k25", ".kdc", ".mrw", ".nef", ".orf", ".ori", ".pef", ".png",
+		".psd", ".raf", ".raw", ".rw2", ".rwl", ".sr2", ".srf", ".srw",
+		".tif", ".tiff", ".webp", ".x3f", ".xmp", ".json",
+	},
 }
 
 func AddInclusionFlags(cmd *cobra.Command, flags *InclusionFlags) {
 	cmd.Flags().Var(&flags.DateRange, "date-range", "Only import photos taken within the specified date range")
 	cmd.Flags().Var(&flags.ExcludedExtensions, "exclude-extensions", "Comma-separated list of extension to exclude. (e.g. .gif,.PM) (default: none)")
 	cmd.Flags().Var(&flags.IncludedExtensions, "include-extensions", "Comma-separated list of extension to include. (e.g. .jpg,.heic) (default: all)")
+	cmd.Flags().StringVar(&flags.IncludeType, "include-type", "", "Specify file type to include (video, picture). Overrides --include-extensions")
+	cmd.PreRun = func(cmd *cobra.Command, args []string) {
+		if cmd.Flags().Changed("include-type") {
+			switch flags.IncludeType {
+			case "video":
+				flags.IncludedExtensions = parseExtensions(flags.IncludedExtensions, flags.IncludeType)
+			case "picture":
+				flags.IncludedExtensions = parseExtensions(flags.IncludedExtensions, flags.IncludeType)
+			default:
+				fmt.Printf("Unknown include-type: %s\n", flags.IncludeType)
+			}
+		}
+	}
+}
+func parseExtensions(sl ExtensionList, IncludeType string) ExtensionList {
+	sl = append(sl, fileTypeMap[IncludeType]...)
+	return sl
 }
 
 // Validate validates the common flags.
 func (flags *InclusionFlags) Validate() {
+
 	flags.ExcludedExtensions = flags.ExcludedExtensions.Validate()
 	flags.IncludedExtensions = flags.IncludedExtensions.Validate()
+
 }
 
 // An ExtensionList is a list of file extensions, where each extension is a string that starts with a dot (.) and is in lowercase.
