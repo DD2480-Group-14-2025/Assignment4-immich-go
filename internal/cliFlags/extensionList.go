@@ -19,22 +19,7 @@ func AddInclusionFlags(cmd *cobra.Command, flags *InclusionFlags) {
 	cmd.Flags().Var(&flags.DateRange, "date-range", "Only import photos taken within the specified date range")
 	cmd.Flags().Var(&flags.ExcludedExtensions, "exclude-extensions", "Comma-separated list of extension to exclude. (e.g. .gif,.PM) (default: none)")
 	cmd.Flags().Var(&flags.IncludedExtensions, "include-extensions", "Comma-separated list of extension to include. (e.g. .jpg,.heic) (default: all)")
-	cmd.Flags().StringVar(&flags.IncludeType, "include-type", "video", "Specify file type to include (video, picture). Overrides --include-extensions")
-	cmd.PreRun = func(cmd *cobra.Command, args []string) {
-		if cmd.Flags().Changed("include-type") {
-			parseExtensions(flags)
-		}
-	}
-}
-func parseExtensions(flags *InclusionFlags) {
-	for ext, mediaType := range filetypes.DefaultSupportedMedia {
-		if (flags.IncludeType == "video" && (mediaType == filetypes.TypeVideo || mediaType == filetypes.TypeSidecar)) ||
-			(flags.IncludeType == "picture" && (mediaType == filetypes.TypeImage || mediaType == filetypes.TypeSidecar)) {
-			if !slices.Contains(flags.IncludedExtensions, ext) {
-				flags.IncludedExtensions = append(flags.IncludedExtensions, ext)
-			}
-		}
-	}
+	cmd.Flags().Var(&flags.IncludedExtensions, "include-type", "Specify file type to include (video, image). Overrides --include-extensions")
 }
 
 // Validate validates the common flags.
@@ -79,11 +64,22 @@ func (sl ExtensionList) Exclude(s string) bool {
 
 // Implements the flag interface
 func (sl *ExtensionList) Set(s string) error {
-	exts := strings.Split(s, ",")
-	for _, ext := range exts {
-		ext = strings.TrimSpace(ext)
-		if ext != "" {
-			*sl = append(*sl, ext)
+	if s == "video" || s == "image" {
+		for ext, mediaType := range filetypes.DefaultSupportedMedia {
+			if (s == "video" && (mediaType == filetypes.TypeVideo || mediaType == filetypes.TypeSidecar)) ||
+				(s == "image" && (mediaType == filetypes.TypeImage || mediaType == filetypes.TypeSidecar)) {
+				if !slices.Contains(*sl, ext) {
+					*sl = append(*sl, ext)
+				}
+			}
+		}
+	} else {
+		exts := strings.Split(s, ",")
+		for _, ext := range exts {
+			ext = strings.TrimSpace(ext)
+			if ext != "" {
+				*sl = append(*sl, ext)
+			}
 		}
 	}
 	return nil
