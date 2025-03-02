@@ -1,6 +1,7 @@
 package cliflags
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 
@@ -11,7 +12,7 @@ import (
 type InclusionFlags struct {
 	ExcludedExtensions ExtensionList
 	IncludedExtensions ExtensionList
-	IncludeType        string
+	IncludedType       IncludeType
 	DateRange          DateRange
 }
 
@@ -19,13 +20,58 @@ func AddInclusionFlags(cmd *cobra.Command, flags *InclusionFlags) {
 	cmd.Flags().Var(&flags.DateRange, "date-range", "Only import photos taken within the specified date range")
 	cmd.Flags().Var(&flags.ExcludedExtensions, "exclude-extensions", "Comma-separated list of extension to exclude. (e.g. .gif,.PM) (default: none)")
 	cmd.Flags().Var(&flags.IncludedExtensions, "include-extensions", "Comma-separated list of extension to include. (e.g. .jpg,.heic) (default: all)")
-	cmd.Flags().Var(&flags.IncludedExtensions, "include-type", "Specify file type to include (video, image). Overrides --include-extensions")
+	cmd.Flags().Var(&flags.IncludedType, "include-type", "Single file type to include. (VIDEO or IMAGE) (default: all)")
+	cmd.PreRun = func(cmd *cobra.Command, args []string) {
+		if cmd.Flags().Changed("include-type") {
+			setIncludeTypeExtensions(flags)
+		}
+	}
+}
+
+func setIncludeTypeExtensions(flags *InclusionFlags) {
+	mediaToExtensionsMap := filetypes.MediaToExtensions()
+
+	switch flags.IncludedType {
+	case IncludeVideo:
+		flags.IncludedExtensions = append(flags.IncludedExtensions, mediaToExtensionsMap[filetypes.TypeVideo]...)
+	case IncludeImage:
+		flags.IncludedExtensions = append(flags.IncludedExtensions, mediaToExtensionsMap[filetypes.TypeImage]...)
+	}
+	flags.IncludedExtensions = append(flags.IncludedExtensions, mediaToExtensionsMap[filetypes.TypeSidecar]...)
 }
 
 // Validate validates the common flags.
 func (flags *InclusionFlags) Validate() {
 	flags.ExcludedExtensions = flags.ExcludedExtensions.Validate()
 	flags.IncludedExtensions = flags.IncludedExtensions.Validate()
+}
+
+type IncludeType string
+
+const (
+	IncludeAll   IncludeType = ""
+	IncludeVideo IncludeType = "VIDEO"
+	IncludeImage IncludeType = "IMAGE"
+)
+
+func (t IncludeType) String() string {
+	return string(t)
+}
+
+// Implements the flag interface
+func (t *IncludeType) Set(v string) error {
+	v = strings.TrimSpace(strings.ToUpper(v))
+	switch v {
+	case string(IncludeVideo), string(IncludeImage):
+		*t = IncludeType(v)
+	default:
+		return fmt.Errorf("invalid value for include type, expected %s or %s", IncludeVideo, IncludeImage)
+	}
+	return nil
+}
+
+func (t IncludeType) Type() string {
+	return "IncludeType"
 }
 
 // An ExtensionList is a list of file extensions, where each extension is a string that starts with a dot (.) and is in lowercase.
@@ -64,22 +110,11 @@ func (sl ExtensionList) Exclude(s string) bool {
 
 // Implements the flag interface
 func (sl *ExtensionList) Set(s string) error {
-	if s == "video" || s == "image" {
-		for ext, mediaType := range filetypes.DefaultSupportedMedia {
-			if (s == "video" && (mediaType == filetypes.TypeVideo || mediaType == filetypes.TypeSidecar)) ||
-				(s == "image" && (mediaType == filetypes.TypeImage || mediaType == filetypes.TypeSidecar)) {
-				if !slices.Contains(*sl, ext) {
-					*sl = append(*sl, ext)
-				}
-			}
-		}
-	} else {
-		exts := strings.Split(s, ",")
-		for _, ext := range exts {
-			ext = strings.TrimSpace(ext)
-			if ext != "" {
-				*sl = append(*sl, ext)
-			}
+	exts := strings.Split(s, ",")
+	for _, ext := range exts {
+		ext = strings.TrimSpace(ext)
+		if ext != "" {
+			*sl = append(*sl, ext)
 		}
 	}
 	return nil
