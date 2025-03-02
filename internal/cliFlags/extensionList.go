@@ -16,6 +16,16 @@ type InclusionFlags struct {
 	DateRange          DateRange
 }
 
+// An IncludeType is either of the constants below which
+// represents a collection of extensions.
+type IncludeType string
+
+const (
+	IncludeAll   IncludeType = ""
+	IncludeVideo IncludeType = "VIDEO"
+	IncludeImage IncludeType = "IMAGE"
+)
+
 func AddInclusionFlags(cmd *cobra.Command, flags *InclusionFlags) {
 	cmd.Flags().Var(&flags.DateRange, "date-range", "Only import photos taken within the specified date range")
 	cmd.Flags().Var(&flags.ExcludedExtensions, "exclude-extensions", "Comma-separated list of extension to exclude. (e.g. .gif,.PM) (default: none)")
@@ -28,6 +38,7 @@ func AddInclusionFlags(cmd *cobra.Command, flags *InclusionFlags) {
 	}
 }
 
+// Add the approprite extensions flags given the user inclusion flag
 func setIncludeTypeExtensions(flags *InclusionFlags) {
 	mediaToExtensionsMap := filetypes.MediaToExtensions()
 
@@ -46,18 +57,6 @@ func (flags *InclusionFlags) Validate() {
 	flags.IncludedExtensions = flags.IncludedExtensions.Validate()
 }
 
-type IncludeType string
-
-const (
-	IncludeAll   IncludeType = ""
-	IncludeVideo IncludeType = "VIDEO"
-	IncludeImage IncludeType = "IMAGE"
-)
-
-func (t IncludeType) String() string {
-	return string(t)
-}
-
 // Implements the flag interface
 func (t *IncludeType) Set(v string) error {
 	v = strings.TrimSpace(strings.ToUpper(v))
@@ -68,6 +67,10 @@ func (t *IncludeType) Set(v string) error {
 		return fmt.Errorf("invalid value for include type, expected %s or %s", IncludeVideo, IncludeImage)
 	}
 	return nil
+}
+
+func (t IncludeType) String() string {
+	return string(t)
 }
 
 func (t IncludeType) Type() string {

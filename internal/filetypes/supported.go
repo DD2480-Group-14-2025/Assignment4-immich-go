@@ -73,6 +73,8 @@ func (sm SupportedMedia) IsIgnoredExt(ext string) bool {
 	return t == ""
 }
 
+// MediaToExtensions defines a map from mediaType to mediaExtensions
+// returns the map with the format map[mediatype] = extensions
 func MediaToExtensions() map[string][]string {
 	reversedMap := make(map[string][]string)
 
