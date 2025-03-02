@@ -19,6 +19,10 @@ func AddInclusionFlags(cmd *cobra.Command, flags *InclusionFlags) {
 	cmd.Flags().Var(&flags.IncludedExtensions, "include-extensions", "Comma-separated list of extension to include. (e.g. .jpg,.heic) (default: all)")
 }
 
+func parseExtensionType(flags *InclusionFlags) {
+
+}
+
 // Validate validates the common flags.
 func (flags *InclusionFlags) Validate() {
 	flags.ExcludedExtensions = flags.ExcludedExtensions.Validate()
