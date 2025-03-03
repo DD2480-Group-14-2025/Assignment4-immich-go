@@ -51,10 +51,6 @@ func setIncludeTypeExtensions(flags *InclusionFlags) {
 	flags.IncludedExtensions = append(flags.IncludedExtensions, mediaToExtensionsMap[filetypes.TypeSidecar]...)
 }
 
-func parseExtensionType(flags *InclusionFlags) {
-
-}
-
 // Validate validates the common flags.
 func (flags *InclusionFlags) Validate() {
 	flags.ExcludedExtensions = flags.ExcludedExtensions.Validate()

@@ -2,6 +2,7 @@ package cliflags
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/simulot/immich-go/internal/filetypes"
@@ -105,6 +106,7 @@ func TestStringList_IncludeType(t *testing.T) {
 
 	var photoTypes []string
 	var videoTypes []string
+	var sidecarTypes []string
 
 	for ext, mediaType := range filetypes.DefaultSupportedMedia {
 		switch mediaType {
@@ -116,6 +118,7 @@ func TestStringList_IncludeType(t *testing.T) {
 			// Sidecar should always be included in the extensions if it's main picture gets added.
 			videoTypes = append(videoTypes, ext)
 			photoTypes = append(photoTypes, ext)
+			sidecarTypes = append(sidecarTypes, ext)
 		default:
 			continue
 		}
@@ -137,22 +140,27 @@ func TestStringList_IncludeType(t *testing.T) {
 			expectedExts: ExtensionList(slices.Clone(videoTypes)),
 		},
 		{
-			name:         "Empty should return empty ext list",
+			// Sidecar files should always be included, not uploading them is solved by the upload logic
+			// and thus it's okay to include them here
+			name:         "Empty should return only sidecar files",
 			includeType:  "",
-			expectedExts: ExtensionList{},
+			expectedExts: ExtensionList(slices.Clone(sidecarTypes)),
 		},
 	}
 
 	for _, tt := range tests {
 		flags := InclusionFlags{
 			IncludedExtensions: ExtensionList{},
+			IncludedType:       IncludeType(strings.ToUpper(tt.includeType)),
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			parseExtensionType(&flags)
+			setIncludeTypeExtensions(&flags)
 
 			for _, ext := range flags.IncludedExtensions {
-				if !slices.Contains(tt.expectedExts, ext) {
+				if len(tt.expectedExts) == 0 {
+					t.Errorf("Expected was empty but still gave %v\n", ext)
+				} else if !slices.Contains(tt.expectedExts, ext) {
 					t.Errorf("Extension: &v missing in %v %v\n", ext, tt.expectedExts)
 				}
 			}
