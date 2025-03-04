@@ -1,0 +1,63 @@
+@startuml
+package "internal/cliFlags" {
+    class InclusionFlags {
+        - ExcludedExtensions : ExtensionList
+        - IncludedExtensions : ExtensionList
+        - IncludedType : IncludeType
+        - DateRange : DateRange
+        + AddInclusionFlags(cmd: Command) : void
+        + Validate() : void
+        + setIncludeTypeExtensions() : void
+    }
+
+    class ExtensionList {
+        <<List of String>>
+        + Validate() : ExtensionList
+        + Include(s: String) : Boolean
+        + Exclude(s: String) : Boolean
+        + Set(s: String) : Error
+        + String() : String
+        + Type() : String
+    }
+
+    class DateRange {
+        <<Irrelevant attributes>>
+    }
+
+    class IncludeType {
+        + Set(v: String) : Error
+        + String() : String
+        + Type() : String
+    }
+    note right of IncludeType
+        Possible values:
+        - IncludeAll ("")
+        - IncludeVideo ("VIDEO")
+        - IncludeImage ("IMAGE")
+    end note
+
+    note right of DateRange
+        "Onle import photos
+        taken within the
+        specified date range"
+    end note
+}
+
+package "internal/filetypes" {
+    ' Provides supported file types and media mappings.
+    class SupportedFileTypes {
+        + DefaultSupportedMedia : Map<String, String>
+        + MediaToExtensions() : Map<String, List<String>>
+        + TypeVideo : String = "video"
+        + TypeImage : String = "image"
+        + TypeSidecar : String = "sidecar"
+    }
+}
+
+InclusionFlags --> ExtensionList : uses
+InclusionFlags --> DateRange : uses
+InclusionFlags ..> IncludeType : has field of type
+InclusionFlags ..> SupportedFileTypes : references in setIncludeTypeExtensions()
+SupportedFileTypes ..> ExtensionList : maps to a list of extensions
+
+@enduml
