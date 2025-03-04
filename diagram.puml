@@ -44,7 +44,6 @@ package "internal/cliFlags" {
 }
 
 package "internal/filetypes" {
-    ' Provides supported file types and media mappings.
     class SupportedFileTypes {
         + DefaultSupportedMedia : Map<String, String>
         + MediaToExtensions() : Map<String, List<String>>
