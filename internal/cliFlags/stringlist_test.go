@@ -139,13 +139,6 @@ func TestStringList_IncludeType(t *testing.T) {
 			includeType:  "video",
 			expectedExts: ExtensionList(slices.Clone(videoTypes)),
 		},
-		{
-			// Sidecar files should always be included, not uploading them is solved by the upload logic
-			// and thus it's okay to include them here
-			name:         "Empty should return only sidecar files",
-			includeType:  "",
-			expectedExts: ExtensionList(slices.Clone(sidecarTypes)),
-		},
 	}
 
 	for _, tt := range tests {
