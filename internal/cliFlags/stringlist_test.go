@@ -157,3 +157,94 @@ func TestStringList_IncludeType(t *testing.T) {
 		})
 	}
 }
+
+func TestStringList_IncludeType_Set(t *testing.T) {
+	validTests := []struct {
+		name                string
+		str                 string
+		expectedIncludeType IncludeType
+	}{
+		{
+			name:                "Lower case video type",
+			str:                 "video",
+			expectedIncludeType: IncludeVideo,
+		},
+		{
+			name:                "Upper case video type",
+			str:                 "VIDEO",
+			expectedIncludeType: IncludeVideo,
+		},
+		{
+			name:                "Mixed casing video type",
+			str:                 "viDEo",
+			expectedIncludeType: IncludeVideo,
+		},
+		{
+			name:                "Leading and trailing whitespace video type",
+			str:                 "  VIDEO     ",
+			expectedIncludeType: IncludeVideo,
+		},
+		{
+			name:                "Lower case image type",
+			str:                 "image",
+			expectedIncludeType: IncludeImage,
+		},
+		{
+			name:                "Upper case image type",
+			str:                 "IMAGE",
+			expectedIncludeType: IncludeImage,
+		},
+		{
+			name:                "Mixed casing image type",
+			str:                 "ImaGe",
+			expectedIncludeType: IncludeImage,
+		},
+		{
+			name:                "Leading and trailing whitespace image type",
+			str:                 "  IMAGE     ",
+			expectedIncludeType: IncludeImage,
+		},
+	}
+
+	for _, tt := range validTests {
+		var includeType IncludeType
+
+		t.Run(tt.name, func(t *testing.T) {
+			err := includeType.Set(tt.str)
+
+			if err != nil {
+				t.Errorf("Expected no error but error is: %v", err)
+			}
+
+			if includeType != tt.expectedIncludeType {
+				t.Errorf("IncludeType was expected to be %v, but is %v", tt.expectedIncludeType, includeType)
+			}
+		})
+	}
+
+	testsThatShouldFail := []struct {
+		name string
+		str  string
+	}{
+		{
+			name: "Empty string",
+			str:  "",
+		},
+		{
+			name: "Invalid string",
+			str:  "imagevideo",
+		},
+	}
+
+	for _, tt := range testsThatShouldFail {
+		var includeType IncludeType
+
+		t.Run(tt.name, func(t *testing.T) {
+			err := includeType.Set(tt.str)
+
+			if err == nil {
+				t.Errorf("The error was expected to be defined but is nil")
+			}
+		})
+	}
+}
