@@ -103,10 +103,8 @@ func TestStringList_Exclude(t *testing.T) {
 }
 
 func TestStringList_IncludeType(t *testing.T) {
-
 	var photoTypes []string
 	var videoTypes []string
-	var sidecarTypes []string
 
 	for ext, mediaType := range filetypes.DefaultSupportedMedia {
 		switch mediaType {
@@ -118,7 +116,6 @@ func TestStringList_IncludeType(t *testing.T) {
 			// Sidecar should always be included in the extensions if it's main picture gets added.
 			videoTypes = append(videoTypes, ext)
 			photoTypes = append(photoTypes, ext)
-			sidecarTypes = append(sidecarTypes, ext)
 		default:
 			continue
 		}
